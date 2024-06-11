@@ -59,7 +59,7 @@ def send_bulk_emails():
             progress['sent'] += 1
         else:
             progress['failed'] += 1
-        time.sleep(5)  # Pausa de 5 segundos entre o envio de cada e-mail
+        time.sleep(10)  # Pausa de 5 segundos entre o envio de cada e-mail
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
