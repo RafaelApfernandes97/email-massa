@@ -4,6 +4,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import threading
+import time
 import os
 
 app = Flask(__name__)
@@ -58,6 +59,7 @@ def send_bulk_emails():
             progress['sent'] += 1
         else:
             progress['failed'] += 1
+        time.sleep(5)  # Pausa de 5 segundos entre o envio de cada e-mail
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
