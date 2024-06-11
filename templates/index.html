@@ -32,6 +32,15 @@
 <body>
     <div class="container mt-5">
         <h1 class="mb-4">Enviar Emails em Massa</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         <form action="/" method="post" enctype="multipart/form-data" class="mb-4">
             <div class="form-group">
                 <label for="subject">Assunto do E-mail</label>
@@ -48,14 +57,9 @@
             <button type="submit" class="btn btn-primary">Upload CSV</button>
         </form>
 
+        
+
         {% if emails %}
-        <h2 class="mb-3">Lista de Emails</h2>
-        <ul class="list-group mb-4">
-            {% for email in emails %}
-                <li class="list-group-item">{{ email }}</li>
-            {% endfor %}
-        </ul>
-        <a href="{{ url_for('send_emails') }}" class="btn btn-success mb-4">Enviar Emails</a>
 
         <h2 class="mb-3">Progresso do Envio</h2>
         <div class="progress mb-3">
@@ -64,6 +68,19 @@
         <p>Total de e-mails: <span id="total">{{ progress.total }}</span></p>
         <p>E-mails enviados: <span id="sent">{{ progress.sent }}</span></p>
         <p>E-mails falhados: <span id="failed">{{ progress.failed }}</span></p>
+        
+        <h2 class="mb-3">Lista de Emails</h2>
+        <ul class="list-group mb-4">
+            {% for email in emails %}
+                <li class="list-group-item">{{ email }}</li>
+            {% endfor %}
+        </ul>
+        <div>
+            {{ pagination.links }}
+        </div>
+        <a href="{{ url_for('send_emails') }}" class="btn btn-success mb-4">Enviar Emails</a>
+
+        
         {% endif %}
     </div>
     <script>

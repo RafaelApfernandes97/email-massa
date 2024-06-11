@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 import pandas as pd
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -6,8 +6,10 @@ from email.mime.text import MIMEText
 import threading
 import time
 import os
+from flask_paginate import Pagination, get_page_args
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -23,13 +25,19 @@ subject = ""
 html_content = ""
 
 def load_recipients(file_path):
-    df = pd.read_csv(file_path)
-    return df['email'].tolist()
+    try:
+        df = pd.read_csv(file_path)
+        if 'email' not in df.columns:
+            raise KeyError('A coluna "email" não foi encontrada no arquivo CSV.')
+        return df['email'].tolist()
+    except Exception as e:
+        flash(str(e), 'danger')
+        return []
 
 def send_email(to_address, subject, html_content):
-    from_address = 'suporte@mais.chat'
-    password = 'myuniodjrosioghc'
-    smtp_server = 'smtp.gmail.com'
+    from_address = 'your_email@example.com'
+    password = 'your_password'
+    smtp_server = 'smtp.example.com'
     smtp_port = 587
 
     msg = MIMEMultipart('alternative')
@@ -54,12 +62,14 @@ def send_bulk_emails():
     progress['total'] = len(email_list)
     progress['sent'] = 0
     progress['failed'] = 0
-    for recipient in email_list:
+    for i, recipient in enumerate(email_list):
         if send_email(recipient, subject, html_content):
             progress['sent'] += 1
         else:
             progress['failed'] += 1
-        time.sleep(10)  # Pausa de 5 segundos entre o envio de cada e-mail
+        time.sleep(5)  # Pausa de 5 segundos entre o envio de cada e-mail
+        if (i + 1) % 50 == 0:  # Pausa de 5 minutos a cada 50 e-mails
+            time.sleep(300)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -74,7 +84,13 @@ def index():
                 os.remove(file_path)
         subject = request.form.get('subject')
         html_content = request.form.get('html_content')
-    return render_template('index.html', emails=email_list, progress=progress, subject=subject, html_content=html_content)
+
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page', per_page=10)
+    total = len(email_list)
+    pagination_emails = email_list[offset:offset + per_page]
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap4')
+
+    return render_template('index.html', emails=pagination_emails, page=page, per_page=per_page, pagination=pagination, progress=progress, subject=subject, html_content=html_content)
 
 @app.route('/send_emails')
 def send_emails():
